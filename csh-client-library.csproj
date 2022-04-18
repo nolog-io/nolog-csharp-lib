@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>library</OutputType>
+    <TargetFrameworks>net6.0;net5.0;netstandard2.1;netcoreapp3.1</TargetFrameworks>
+    <RootNamespace>nolog_client_lib</RootNamespace>
+    <OutputPath>bin/</OutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Google.Protobuf" Version="3.19.3" />
+  </ItemGroup>
+
+</Project>

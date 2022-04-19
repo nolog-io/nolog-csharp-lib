@@ -417,7 +417,7 @@ namespace nolog
   }
 
   /// <summary>
-  /// Predefined Alert message to surface in the event of a failure when fulfilling an Objective or calling a Dependency.
+  /// Predefined message to surface in the event of a failure when fulfilling an Objective or calling a Dependency.
   /// </summary>
   public class Alert {
     internal internals.alert alert;
@@ -464,26 +464,20 @@ namespace nolog
     }
 
     /// <summary>
-    /// Fail is used to mark the DependencyTracker as failed.
-  	/// It lets nolog know of the failure and the alert is displayed on the dashboard along with sampled dynamic data.
-    /// 
-    /// <para>Calling Success() or Fail(...) marks this DependencyTracker as closed.</para>
-    /// <para>The following result in error states that will (1) stop tracking the Objective and (2) Surface an alert on the dashboard when possible:</para>
-    /// <para>- Success() or Fail(...) is invoked again on a closed Tracker.</para>
-    /// <para>- Any tracker is garbage collected without a Success() or Fail(...) call.</para>
+    /// Success is used to mark this tracker as successfully completed (including ending early due to bad input or reaching successful completion).
+    /// Calling Success() or Fail(...) marks this tracker as closed.
+    /// Forgetting to close or trying to re-close a tracker results in tracking entering an error state.
     /// </summary>
     public void Success() {
       this.tracker.safe_success();
     }
 
     /// <summary>
-    /// Fail is used to mark the DependencyTracker as failed. Error messages (max: 1000 chars) passed to Fail() will be sampled
+    /// Fail is used to mark the tracker as failed using the Alert as the reason.
+    /// Included error messages (max: 1000 chars) passed to Fail() will be sampled
 	  /// before being sent onwards.
-	  /// 
-    /// <para>Calling Success() or Fail(...) marks this DependencyTracker as closed.</para>
-    /// <para>The following result in error states that will (1) stop tracking the Objective and (2) Surface an alert on the dashboard when possible:</para>
-    /// <para>- Success() or Fail(...) is invoked again on a closed Tracker.</para>
-    /// <para>- Any tracker is garbage collected without a Success() or Fail(...) call.</para>
+    /// Calling Success() or Fail(...) marks this tracker as closed.
+    /// Forgetting to close or trying to re-close a tracker results in tracking entering an error state.
     /// </summary>
     public void Fail(Alert alert, string errorMsg) {
       tracker.safe_fail(alert != null ? alert.alert : null, errorMsg);
@@ -501,26 +495,20 @@ namespace nolog
     }
 
     /// <summary>
-    /// Success is used to mark the ObjectiveTracker as successfully completed.
-    /// 
-    /// <para>Calling Success() or Fail(...) marks this ObjectiveTracker as closed.</para>
-    /// <para>The following result in error states that will (1) stop tracking the Objective and (2) Surface an alert on the dashboard when possible:</para>
-    /// <para>- Success() or Fail(...) is invoked again on a closed Tracker.</para>
-    /// <para>- Any dependencies tracking started as part of this objective aren't already closed via Success() or Fail(...) calls.</para>
-    /// <para>- Any tracker is garbage collected without a Success() or Fail(...) call.</para>
+    /// Success is used to mark this tracker as successfully completed (including ending early due to bad input or reaching successful completion).
+    /// Calling Success() or Fail(...) marks this tracker as closed.
+    /// Forgetting to close or trying to re-close a tracker results in tracking entering an error state.
     /// </summary>
     public void Success() {
       this.tracker.safe_success();
     }
 
     /// <summary>
-    /// Fail is used to mark the ObjectiveTracker as failed. Error messages (max: 1000 chars) passed to Fail() will be sampled
+    /// Fail is used to mark the tracker as failed using the Alert as the reason.
+    /// Included error messages (max: 1000 chars) passed to Fail() will be sampled
 	  /// before being sent onwards.
-	  /// 
-    /// <para>Calling Success() or Fail(...) marks this ObjectiveTracker as closed.</para>
-    /// <para>The following result in error states that will (1) stop tracking the Objective and (2) Surface an alert on the dashboard when possible:</para>
-    /// <para>- Success() or Fail(...) is invoked again on a closed Tracker.</para>
-    /// <para>- Any tracker is garbage collected without a Success() or Fail(...) call.</para>
+    /// Calling Success() or Fail(...) marks this tracker as closed.
+    /// Forgetting to close or trying to re-close a tracker results in tracking entering an error state.
     /// </summary>
     public void Fail(Alert alert, string errorMsg) {
       tracker.safe_fail(alert != null ? alert.alert : null, errorMsg);
@@ -542,48 +530,6 @@ namespace nolog
   /// Each service goal is registered once via a nolog.CreateObjective or nolog.DefineObjective and an
   /// Objective is returned to be used in code for monitoring.
   /// </summary>
-  /// <example>
-  /// using NoLogClientLib
-  ///
-  /// namespace NoLogExample {
-  ///   class NoLogExample {
-  ///     private static Objective respondHelloObjective = NoLog.CreateObjective("RespondHello");
-  ///     
-  ///     public String RespondHello(String name) {
-  ///       ObjectiveTracker respondHello = respondHelloObjective.Start()
-  ///       String result = "Hello " + name + "!"
-  ///       respondHello.Success()
-  ///       return result
-  ///     }
-  ///   }
-  /// }
-  /// </example>
-  /// Any dependencies that the Objective relies on and any alerts that may be surfaced should be defined here as well.
-  /// <example>
-  /// using NoLogClientLib
-  ///
-  /// namespace NoLogExample {
-  ///   class NoLogExample {
-  ///     private static Objective respondHelloObjective = NoLog.DefineObjective("RespondHello");
-  ///     private static Alert unsupportedNameAlert = respondHelloObjective.WithAlert("Unsupported name, starts with A.")
-  ///     private static Dependency lastNameServiceDep = respondHelloObjective.AddDependency("lastNameService")
-  ///     
-  ///     public String RespondHello(String name) {
-  ///       ObjectiveTracker respondHello = respondHelloObjective.Start()
-  ///       if (name.StartsWith("a") || name.StartsWith("A")) {
-  /// 	      respondHello.Fail(unsupportedNameAlert, name)
-  ///         return ""
-  ///       }
-  ///       DependencyTracker callLastName = lastNameServiceDep.start()
-  ///       String lastName = getLastName(name)
-  ///       callLastName.success()
-  ///       String result = "Hello " + name +" " + lastName + "!"
-  ///       respondHello.Success()
-  ///       return result
-  ///     }
-  ///   }
-  /// }
-  /// </example>
   public class Objective {
     internal internals.base_counter bc;
     internal Objective(internals.base_counter bc) {
@@ -591,24 +537,7 @@ namespace nolog
     }
 
     /// <summary>
-	  /// Add a Dependency (max: 40 chars) used by this Objective.
-    /// <list type="bullet">
-    ///   <item>
-    ///     <term>dependency</term>
-    ///     <description>>the name of the dependency. (max: 40 chars)</description>
-    ///   </item>
-    ///   <item>
-    ///     <term>action</term>
-    ///     <description>>a description of the the feature of the dependency being relied on. (max: 40 chars)</description>
-    ///   </item>
-    /// </list>
-    /// <para>The three recommended approaches for action are to either:</para>
-    /// <para>1. Pass /// in either a simple-descriptor for the work being performed by the dependency</para>
-    /// <example>AddDependency("AccountAPI", "GetOwnerFromAccount")</example>
-    /// <para>2. the descriptive HTTP path exposed by the dependency.</para>
-    /// <example>AddDependency("AccountAPI", "/get-account")</example>
-    /// <para>3. in the event of a database, the the table name being relied on.</para>
-    /// <example>AddDependency("MySqlDatabase", "Accounts")</example>
+	  /// Add a Dependency (max: 40 chars) to track that is used by this Objective and a short action (max: 40 chars) that describes the usage.
     /// </summary>
     public Dependency AddDependency(string name, string action) {
       name = internals.utils.trim(name, 40, true);
@@ -907,13 +836,9 @@ namespace nolog
     }
 
     /// <summary>Initialize needs to be called in Main() before the program begins monitoring with NoLog.</summary>
-    /// <param name="serviceID">the name or id of the service being monitored. All instances for the same service should use the same identifier. (max: 40 chars)</param>
-    /// <param name="instanceID">a unique instance identifier so two different instances can be differentiated. (max: 40 chars)</param>
-    /// <param name="versionID">an ID to track the version of the software running. This is a means to disambiguiate instances running different versions of the code. (max: 10 chars)</param>
-    /// <param name="noLogConfig">the NoLog API Key. Use PROD key for Production, DEV Key for Non-Prod, and "" for Local.</param>
-    public static void Initialize(string service_id, string instance_id, string version_id, string noLogConfig) {
-      if (noLogConfig != null && noLogConfig.Length > 5000) {
-        noLogConfig = noLogConfig.Substring(0, 5000);
+    public static void Initialize(string service_id, string instance_id, string version_id, string noLogApiKey) {
+      if (noLogApiKey != null && noLogApiKey.Length > 5000) {
+        noLogApiKey = noLogApiKey.Substring(0, 5000);
       }
       lock(reserved_block_name) {
         if (initialized) {
@@ -922,7 +847,7 @@ namespace nolog
           internals.error_bit.ERROR_BIT_MULTIPLE_INITIALIZATION);
           return;
         }
-        if (noLogConfig == null || noLogConfig.Length == 0) {
+        if (noLogApiKey == null || noLogApiKey.Length == 0) {
           errors.safe_notify(
             "Cannot initialize NoLog with empty key",
             internals.notify_bit.NOTIFY_BIT_EMPTY_API_KEY);
@@ -950,10 +875,10 @@ namespace nolog
         foreach (Objective obj in objectives.Values) {
           obj.bc.safe_update_init(initialized);
         }
-        raw_key = noLogConfig;
-        if (!noLogConfig.Equals("local")) {
+        raw_key = noLogApiKey;
+        if (!noLogApiKey.Equals("local")) {
           try {
-            key = ClientKey.Parser.ParseFrom(System.Convert.FromBase64String(noLogConfig));
+            key = ClientKey.Parser.ParseFrom(System.Convert.FromBase64String(noLogApiKey));
           } catch(Exception) {
             errors.safe_notify(
               "Cannot initialize NoLog with invalid API key",
@@ -1006,24 +931,7 @@ namespace nolog
 
     /// <summary>
     /// CreateObjective (max: 40 chars) returns an ObjectiveTracker used for monitoring a Service objective.
-    /// This should be called once to register the Objective.
     /// </summary>
-    /// <example>
-    /// using NoLogClientLib
-    ///
-    /// namespace NoLogExample {
-    ///   class NoLogExample {
-    ///     private static Objective respondHelloObjective = NoLog.CreateObjective("RespondHello")
-    ///     
-    ///     public String RespondHello(String name) {
-    ///       ObjectiveTracker respondHello = respondHelloObjective.Start()
-    ///       String result = "Hello " + name + "!"
-    ///       respondHello.Success()
-    ///       return result
-    ///     }
-    ///   }
-    /// }
-    /// </example>
     public static Objective CreateObjective(string name) {
       name = internals.utils.trim(name, 40, true);
       if (name.StartsWith("nolog")) {
